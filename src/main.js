@@ -1,29 +1,262 @@
 import { createClient } from '@supabase/supabase-js';
 import './style.css';
 
-const env = import.meta.env;
-const supabase = env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY
-  ? createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY) : null;
+// The Supabase URL and publishable key are supplied by the GitHub Actions build.
+const { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY } = import.meta.env;
+const supabase = VITE_SUPABASE_URL && VITE_SUPABASE_ANON_KEY
+  ? createClient(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
+  : null;
+
+// This is the family row created in Supabase.
+const FAMILY_ID = 'ecf0a753-dd2a-48b0-b42a-ca8069ddc154';
 const people = [
-  { id:'all', name:'Alle', color:'#456b53', initials:'✳' },
-  { id:'lukas', name:'Lukas', color:'#d08e70', initials:'L' },
-  { id:'timea', name:'Timea', color:'#7194a0', initials:'T' },
+  { id: 'all', name: 'Alle', color: '#456b53', initials: '✳' },
+  { id: 'lukas', name: 'Lukas', color: '#d08e70', initials: 'L' },
+  { id: 'timea', name: 'Timea', color: '#7194a0', initials: 'T' },
 ];
-const now = new Date();
-let year = now.getFullYear(), month = now.getMonth(), selected = new Date(now.getFullYear(),now.getMonth(),now.getDate());
-let activeMember='all', events=[], mode='month', familyId='ecf0a753-dd2a-48b0-b42a-ca8069ddc154';
-const pad=n=>String(n).padStart(2,'0');
-const key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt=(d,opt={weekday:'long',day:'numeric',month:'long'})=>new Intl.DateTimeFormat('de-DE',opt).format(d);
-function icon(name,size=18){const paths={plus:'<path d="M12 5v14M5 12h14"/>',left:'<path d="m15 18-6-6 6-6"/>',right:'m9 18 6-6-6-6',chevron:'m9 18 6-6-6-6',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',check:'<path d="m5 12 4 4L19 6"/>',sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>'};return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths[name]||''}</svg>`}
-async function load(){if(!supabase){renderNotice('Supabase ist noch nicht verbunden. Prüfe die GitHub Actions Secrets VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY und veröffentliche die Seite erneut.');return}const{data,error}=await supabase.from('events').select('*').eq('family_id',familyId).gte('date',`${year}-${pad(month+1)}-01`).lt('date',`${month===11?year+1:year}-${pad(month===11?1:month+2)}-01`).order('time');if(error){renderNotice('Kalender konnte nicht geladen werden: '+error.message);return}events=data||[];render()}
-function getEvents(d){return events.filter(e=>e.date===key(d)&&(activeMember==='all'||e.member==='all'||e.member===activeMember))}
-function render(){document.querySelector('#app').innerHTML=`<div class="layout"><aside class="sidebar"><a class="brand" href="#"><span class="brand-mark">${icon('sun',20)}</span><span>together<span class="brand-dot">.</span><small>FAMILIENKALENDER</small></span></a><button class="create-btn" id="add"><span>${icon('plus',17)}</span>Neuer Termin</button><div class="side-label">MENÜ</div><button class="nav-item active">${icon('calendar')}<span>Kalender</span></button><button class="nav-item" id="todayNav">${icon('clock')}<span>Heute</span></button><div class="member-heading"><span>FAMILIE</span><button id="invite" title="Familie einladen">+</button></div><div class="members">${people.filter(p=>p.id!=='all').map(p=>`<button class="member ${activeMember===p.id?'selected':''}" data-person="${p.id}"><span class="avatar" style="--person:${p.color}">${p.initials}</span>${p.name}<span class="member-check">${activeMember===p.id?icon('check',13):''}</span></button>`).join('')}</div><div class="side-bottom"><div class="sync-badge"><span class="sync-dot"></span>${supabase?'Gemeinsamer Familienkalender':'Demo-Modus'}</div><div class="profile"><span class="avatar profile-avatar">F</span><span><b>Familie</b><small>${supabase?'Gemeinsamer Kalender':'Demo-Modus'}</small></span></div></div></aside><main class="main"><header class="topbar"><button class="mobile-menu">${icon('menu')}</button><div class="crumb">Mein Bereich <span>/</span> <b>Kalender</b></div><div class="top-actions"><button class="icon-btn" id="searchBtn">${icon('search')}</button><button class="today-btn" id="todayBtn">Heute</button><div class="view-toggle"><button data-mode="month" class="${mode==='month'?'chosen':''}">Monat</button><button data-mode="week" class="${mode==='week'?'chosen':''}">Woche</button></div><span class="top-avatar">F</span></div></header><section class="content"><div class="welcome-row"><div><div class="eyebrow">EURE ZEIT. EUER ÜBERBLICK.</div><h1>Familienkalender<span class="title-dot">.</span></h1><p>Alles im Blick, gemeinsam geplant.</p></div><button class="add-main" id="add2">${icon('plus',17)} Termin hinzufügen</button></div><div class="calendar-card"><div class="calendar-head"><div class="month-nav"><button class="arrow" id="prev">${icon('left')}</button><button class="arrow" id="next">${icon('right')}</button><h2>${new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'}).format(new Date(year,month,1))}</h2><span class="month-tag">${events.length} Termine</span></div><div class="legend">${people.slice(1).map(p=>`<span><i style="--person:${p.color}"></i>${p.name}</span>`).join('')}</div></div><div class="calendar-grid"><div class="weekdays">${['Mo','Di','Mi','Do','Fr','Sa','So'].map(d=>`<div>${d}</div>`).join('')}</div><div class="days">${calendarDays().map(d=>{let ev=getEvents(d),isOther=d.getMonth()!==month,isToday=key(d)===key(now),isSelected=key(d)===key(selected);return `<button class="day ${isOther?'other':''} ${isToday?'today':''} ${isSelected?'picked':''}" data-date="${key(d)}"><span class="day-num">${d.getDate()}</span><span class="day-events">${ev.slice(0,2).map(e=>`<span class="event-chip" style="--person:${people.find(p=>p.id===e.member)?.color||'#456b53'}"><i></i><b>${esc(e.time)}</b> ${esc(e.title)}</span>`).join('')}${ev.length>2?`<span class="more">+${ev.length-2} weitere</span>`:''}</span></button>`}).join('')}</div></div></div><div class="below"><section class="agenda-card"><div class="agenda-head"><div><div class="eyebrow">DEIN TAG AUF EINEN BLICK</div><h3>${fmt(selected)} <span>· ${selected.getFullYear()}</span></h3></div><button class="small-add" id="add3">+ Termin</button></div><div class="agenda-list">${getEvents(selected).length?getEvents(selected).map(e=>{let p=people.find(p=>p.id===e.member)||people[0];return `<div class="agenda-event"><span class="agenda-line" style="--person:${p.color}"></span><time>${esc(e.time||'Ganztägig')}</time><div><b>${esc(e.title)}</b><small><span class="avatar mini" style="--person:${p.color}">${p.initials}</span>${p.name} · ${esc(e.category||'Familie')}</small></div><button class="delete-event" data-delete="${e.id}" title="Termin löschen">×</button></div>`}).join(''):`<div class="empty-agenda"><span class="empty-icon">${icon('sun',20)}</span><span><b>Ein freier Tag!</b><small>Hier ist noch nichts geplant.</small></span><button id="emptyAdd">Termin planen ${icon('chevron',14)}</button></div>`}</div></section><aside class="quote-card"><div class="quote-symbol">“</div><p>Die schönsten Momente sind die, die wir gemeinsam planen.</p><span>— EURE FAMILIE</span><div class="quote-flower">✳</div></aside></div><footer>Mit Liebe organisiert <span>✳</span></footer></section></main></div><div id="modal"></div>`;
- document.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>{activeMember=activeMember===b.dataset.person?'all':b.dataset.person;render()});document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{selected=new Date(`${b.dataset.date}T12:00:00`);render()});document.querySelector('#prev').onclick=()=>move(-1);document.querySelector('#next').onclick=()=>move(1);document.querySelector('#todayBtn').onclick=document.querySelector('#todayNav').onclick=()=>{year=now.getFullYear();month=now.getMonth();selected=new Date(now);load()};document.querySelectorAll('#add,#add2,#add3').forEach(b=>b.onclick=()=>openModal());document.querySelector('#emptyAdd')?.addEventListener('click',()=>openModal());document.querySelector('#invite').onclick=()=>alert('Teile den Link zu diesem Kalender mit deiner Familie.');document.querySelector('#searchBtn').onclick=()=>{let q=prompt('Termine suchen:');if(q){const found=events.filter(e=>e.title.toLowerCase().includes(q.toLowerCase()));alert(found.length?found.map(e=>`${e.date} · ${e.title}`).join('\n'):'Keine Termine gefunden.')}};document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.mode;render()});document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeEvent(b.dataset.delete));}
-function renderNotice(message){document.querySelector('#app').innerHTML=`<main class="auth-page"><section class="auth-card"><h1>Kalender nicht bereit</h1><p>${esc(message)}</p><button class="save-btn" id="reload">Erneut laden</button></section></main>`;document.querySelector('#reload').onclick=()=>load()}
-function calendarDays(){const first=new Date(year,month,1),last=new Date(year,month+1,0),start=(first.getDay()+6)%7,n=Math.ceil((start+last.getDate())/7)*7;return Array.from({length:n},(_,i)=>new Date(year,month,1-start+i))}
-function move(delta){const d=new Date(year,month+delta,1);year=d.getFullYear();month=d.getMonth();selected=new Date(year,month,Math.min(selected.getDate(),new Date(year,month+1,0).getDate()));load()}
-function openModal(){document.querySelector('#modal').innerHTML=`<div class="modal-backdrop"><form class="modal"><button type="button" class="modal-close">×</button><div class="eyebrow">GEMEINSAM PLANEN</div><h2>Neuer Termin</h2><label>Titel<input name="title" required placeholder="Was steht an?" autofocus></label><div class="form-row"><label>Datum<input name="date" type="date" required value="${key(selected)}"></label><label>Uhrzeit<input name="time" type="time" value="10:00"></label></div><div class="form-row"><label>Für wen<select name="member">${people.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></label><label>Kategorie<select name="category">${['Familie','Schule','Arbeit','Freizeit','Sport','Termin'].map(x=>`<option>${x}</option>`).join('')}</select></label></div><label>Notiz<input name="note" placeholder="Optional"></label><button class="save-btn" type="submit">${icon('plus',16)} Termin speichern</button></form></div>`;const modal=document.querySelector('.modal-backdrop');modal.onclick=e=>{if(e.target===modal)modal.remove()};document.querySelector('.modal-close').onclick=()=>modal.remove();document.querySelector('.modal').onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));if(supabase){data.family_id=familyId;const{error}=await supabase.from('events').insert(data);if(error){alert('Speichern fehlgeschlagen: '+error.message);return}}else events.push({id:crypto.randomUUID(),...data});selected=new Date(`${data.date}T12:00:00`);year=selected.getFullYear();month=selected.getMonth();await load()}}
-async function removeEvent(id){if(!confirm('Diesen Termin löschen?'))return;if(supabase){const{error}=await supabase.from('events').delete().eq('id',id).eq('family_id',familyId);if(error){alert(error.message);return}}else events=events.filter(e=>e.id!==id);load()}
-if(supabase)supabase.channel('family-events').on('postgres_changes',{event:'*',schema:'public',table:'events'},()=>load()).subscribe();load();
+
+const today = new Date();
+let year = today.getFullYear();
+let month = today.getMonth();
+let selectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+let activeMember = 'all';
+let events = [];
+let mode = 'month';
+
+const pad = value => String(value).padStart(2, '0');
+const dateKey = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[char]));
+
+const icons = {
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  left: '<path d="m15 18-6-6 6-6"/>',
+  right: '<path d="m9 18 6-6-6-6"/>',
+  chevron: '<path d="m9 18 6-6-6-6"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>',
+};
+
+function icon(name, size = 18) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name] || ''}</svg>`;
+}
+
+function addIcons() {
+  document.querySelectorAll('[data-icon]').forEach(element => {
+    const name = element.dataset.icon;
+    element.innerHTML = icon(name, name === 'sun' ? 20 : 18);
+  });
+}
+
+function eventsFor(date) {
+  return events.filter(event => event.date === dateKey(date)
+    && (activeMember === 'all' || event.member === 'all' || event.member === activeMember));
+}
+
+function getCalendarDays() {
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const offset = (firstDay.getDay() + 6) % 7;
+  const cellCount = Math.ceil((offset + lastDay.getDate()) / 7) * 7;
+  return Array.from({ length: cellCount }, (_, index) => new Date(year, month, 1 - offset + index));
+}
+
+function renderMembers() {
+  document.querySelector('#members').innerHTML = people
+    .filter(person => person.id !== 'all')
+    .map(person => `<button class="member ${activeMember === person.id ? 'selected' : ''}" data-person="${person.id}" type="button">
+      <span class="avatar" style="--person:${person.color}">${person.initials}</span>${person.name}
+      <span class="member-check">${activeMember === person.id ? icon('check', 13) : ''}</span>
+    </button>`).join('');
+  document.querySelector('#legend').innerHTML = people.slice(1)
+    .map(person => `<span><i style="--person:${person.color}"></i>${person.name}</span>`).join('');
+}
+
+function renderDays() {
+  document.querySelector('#days').innerHTML = getCalendarDays().map(date => {
+    const dayEvents = eventsFor(date);
+    const isOtherMonth = date.getMonth() !== month;
+    const isToday = dateKey(date) === dateKey(today);
+    const isSelected = dateKey(date) === dateKey(selectedDate);
+    const chips = dayEvents.slice(0, 2).map(event => {
+      const person = people.find(item => item.id === event.member) || people[0];
+      return `<span class="event-chip" style="--person:${person.color}"><i></i><b>${escapeHtml(event.time || '')}</b> ${escapeHtml(event.title)}</span>`;
+    }).join('');
+    const more = dayEvents.length > 2 ? `<span class="more">+${dayEvents.length - 2} weitere</span>` : '';
+    return `<button class="day ${isOtherMonth ? 'other' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'picked' : ''}" data-date="${dateKey(date)}" type="button">
+      <span class="day-num">${date.getDate()}</span><span class="day-events">${chips}${more}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderAgenda() {
+  const heading = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate);
+  document.querySelector('#selectedDate').innerHTML = `${heading} <span>· ${selectedDate.getFullYear()}</span>`;
+  const dayEvents = eventsFor(selectedDate);
+  if (!dayEvents.length) {
+    document.querySelector('#agendaList').innerHTML = `<div class="empty-agenda">
+      <span class="empty-icon">${icon('sun', 20)}</span>
+      <span><b>Ein freier Tag!</b><small>Hier ist noch nichts geplant.</small></span>
+      <button id="emptyAdd" type="button">Termin planen ${icon('chevron', 14)}</button>
+    </div>`;
+    document.querySelector('#emptyAdd').onclick = openEventForm;
+    return;
+  }
+  document.querySelector('#agendaList').innerHTML = dayEvents.map(event => {
+    const person = people.find(item => item.id === event.member) || people[0];
+    return `<div class="agenda-event">
+      <span class="agenda-line" style="--person:${person.color}"></span>
+      <time>${escapeHtml(event.time || 'Ganztägig')}</time>
+      <div><b>${escapeHtml(event.title)}</b><small><span class="avatar mini" style="--person:${person.color}">${person.initials}</span>${person.name} · ${escapeHtml(event.category || 'Familie')}</small></div>
+      <button class="delete-event" data-delete="${event.id}" title="Termin löschen" type="button">×</button>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('[data-delete]').forEach(button => {
+    button.onclick = () => deleteEvent(button.dataset.delete);
+  });
+}
+
+function render() {
+  addIcons();
+  renderMembers();
+  document.querySelector('#monthTitle').textContent = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' }).format(new Date(year, month, 1));
+  document.querySelector('#eventCount').textContent = `${events.length} Termine`;
+  document.querySelector('#syncStatus').textContent = supabase ? 'Mit Supabase verbunden' : 'Supabase nicht verbunden';
+  document.querySelector('#profileStatus').textContent = supabase ? 'Lukas & Timea' : 'Demo ohne Daten';
+  renderDays();
+  renderAgenda();
+  bindControls();
+}
+
+function bindControls() {
+  document.querySelectorAll('[data-person]').forEach(button => {
+    button.onclick = () => {
+      activeMember = activeMember === button.dataset.person ? 'all' : button.dataset.person;
+      render();
+    };
+  });
+  document.querySelectorAll('[data-date]').forEach(button => {
+    button.onclick = () => {
+      selectedDate = new Date(`${button.dataset.date}T12:00:00`);
+      render();
+    };
+  });
+  document.querySelector('#prev').onclick = () => moveMonth(-1);
+  document.querySelector('#next').onclick = () => moveMonth(1);
+  document.querySelector('#todayBtn').onclick = document.querySelector('#todayNav').onclick = () => {
+    year = today.getFullYear(); month = today.getMonth(); selectedDate = new Date(today); loadEvents();
+  };
+  ['#add', '#add2', '#add3'].forEach(selector => {
+    document.querySelector(selector).onclick = openEventForm;
+  });
+  document.querySelector('#invite').onclick = () => alert('Teile den Link zu diesem Kalender mit deiner Familie.');
+  document.querySelector('#searchBtn').onclick = searchEvents;
+  document.querySelectorAll('[data-mode]').forEach(button => {
+    button.onclick = () => {
+      mode = button.dataset.mode;
+      document.querySelectorAll('[data-mode]').forEach(item => item.classList.toggle('chosen', item.dataset.mode === mode));
+    };
+  });
+}
+
+async function loadEvents() {
+  if (!supabase) {
+    events = [];
+    render();
+    showNotice('Supabase ist noch nicht verbunden. Prüfe die GitHub Actions Secrets.');
+    return;
+  }
+  const start = `${year}-${pad(month + 1)}-01`;
+  const nextMonth = new Date(year, month + 1, 1);
+  const end = `${nextMonth.getFullYear()}-${pad(nextMonth.getMonth() + 1)}-01`;
+  const { data, error } = await supabase.from('events').select('*')
+    .eq('family_id', FAMILY_ID).gte('date', start).lt('date', end).order('time');
+  if (error) {
+    showNotice(`Supabase-Fehler beim Laden: ${error.message}`);
+    return;
+  }
+  hideNotice();
+  events = data || [];
+  render();
+}
+
+function moveMonth(amount) {
+  const next = new Date(year, month + amount, 1);
+  year = next.getFullYear();
+  month = next.getMonth();
+  selectedDate = new Date(year, month, Math.min(selectedDate.getDate(), new Date(year, month + 1, 0).getDate()));
+  loadEvents();
+}
+
+function openEventForm() {
+  document.querySelector('#modal').innerHTML = `<div class="modal-backdrop"><form class="modal" id="eventForm">
+    <button type="button" class="modal-close" aria-label="Schließen">×</button>
+    <div class="eyebrow">GEMEINSAM PLANEN</div><h2>Neuer Termin</h2>
+    <label>Titel<input name="title" required placeholder="Was steht an?"></label>
+    <div class="form-row"><label>Datum<input name="date" type="date" required value="${dateKey(selectedDate)}"></label><label>Uhrzeit<input name="time" type="time" value="10:00"></label></div>
+    <div class="form-row"><label>Für wen<select name="member">${people.map(person => `<option value="${person.id}">${person.name}</option>`).join('')}</select></label>
+    <label>Kategorie<select name="category">${['Familie', 'Schule', 'Arbeit', 'Freizeit', 'Sport', 'Termin'].map(value => `<option>${value}</option>`).join('')}</select></label></div>
+    <label>Notiz<input name="note" placeholder="Optional"></label>
+    <button class="save-btn" type="submit">${icon('plus', 16)} Termin speichern</button>
+  </form></div>`;
+  const backdrop = document.querySelector('.modal-backdrop');
+  backdrop.onclick = event => { if (event.target === backdrop) backdrop.remove(); };
+  document.querySelector('.modal-close').onclick = () => backdrop.remove();
+  document.querySelector('#eventForm').onsubmit = saveEvent;
+}
+
+async function saveEvent(event) {
+  event.preventDefault();
+  const values = Object.fromEntries(new FormData(event.currentTarget));
+  if (!supabase) {
+    showNotice('Termin konnte nicht gespeichert werden: Supabase ist nicht verbunden.');
+    return;
+  }
+  const { error } = await supabase.from('events').insert({ ...values, family_id: FAMILY_ID });
+  if (error) {
+    alert(`Speichern fehlgeschlagen: ${error.message}`);
+    return;
+  }
+  selectedDate = new Date(`${values.date}T12:00:00`);
+  year = selectedDate.getFullYear(); month = selectedDate.getMonth();
+  document.querySelector('#modal').innerHTML = '';
+  await loadEvents();
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Diesen Termin löschen?')) return;
+  if (!supabase) return;
+  const { error } = await supabase.from('events').delete().eq('id', id).eq('family_id', FAMILY_ID);
+  if (error) { alert(`Löschen fehlgeschlagen: ${error.message}`); return; }
+  await loadEvents();
+}
+
+function searchEvents() {
+  const query = prompt('Termine suchen:');
+  if (!query) return;
+  const found = events.filter(event => event.title.toLowerCase().includes(query.toLowerCase()));
+  alert(found.length ? found.map(event => `${event.date} · ${event.title}`).join('\n') : 'Keine Termine gefunden.');
+}
+
+function showNotice(message) {
+  const notice = document.querySelector('#notice');
+  notice.textContent = message;
+  notice.hidden = false;
+}
+
+function hideNotice() {
+  document.querySelector('#notice').hidden = true;
+}
+
+addIcons();
+loadEvents();
+if (supabase) {
+  supabase.channel('family-events')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, loadEvents)
+    .subscribe();
+}
