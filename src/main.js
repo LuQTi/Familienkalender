@@ -32,7 +32,7 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
 const icons = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   left: '<path d="m15 18-6-6 6-6"/>',
-  right: '<path d="m9 18 6-6-6-6"/>',
+  right: '<path d="M9 6 L15 12 L9 18"/>',
   chevron: '<path d="m9 18 6-6-6-6"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
