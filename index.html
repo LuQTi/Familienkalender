@@ -5,9 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f6f7f4" />
     <title>Familienkalender</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
-  <body><div id="app"></div><script type="module" src="/src/main.js"></script></body>
+  <body>
+    <div id="app">
+      <div class="layout">
+        <aside class="sidebar">
+          <a class="brand" href="#">
+            <span class="brand-mark" data-icon="sun"></span>
+            <span>together<span class="brand-dot">.</span><small>FAMILIENKALENDER</small></span>
+          </a>
+          <button class="create-btn" id="add"><span data-icon="plus"></span>Neuer Termin</button>
+          <div class="side-label">MENÜ</div>
+          <button class="nav-item active" type="button"><span data-icon="calendar"></span><span>Kalender</span></button>
+          <button class="nav-item" id="todayNav" type="button"><span data-icon="clock"></span><span>Heute</span></button>
+          <div class="member-heading"><span>FAMILIE</span><button id="invite" title="Familie einladen" type="button">+</button></div>
+          <div class="members" id="members"></div>
+          <div class="side-bottom">
+            <div class="sync-badge"><span class="sync-dot"></span><span id="syncStatus">Verbinde …</span></div>
+            <div class="profile"><span class="avatar profile-avatar">F</span><span><b>Familie</b><small id="profileStatus">Gemeinsamer Kalender</small></span></div>
+          </div>
+        </aside>
+
+        <main class="main">
+          <header class="topbar">
+            <button class="mobile-menu" type="button"><span data-icon="menu"></span></button>
+            <div class="crumb">Mein Bereich <span>/</span> <b>Kalender</b></div>
+            <div class="top-actions">
+              <button class="icon-btn" id="searchBtn" type="button" aria-label="Suchen"><span data-icon="search"></span></button>
+              <button class="today-btn" id="todayBtn" type="button">Heute</button>
+              <div class="view-toggle">
+                <button data-mode="month" class="chosen" type="button">Monat</button>
+                <button data-mode="week" type="button">Woche</button>
+              </div>
+              <span class="top-avatar">F</span>
+            </div>
+          </header>
+
+          <section class="content">
+            <div class="welcome-row">
+              <div>
+                <div class="eyebrow">EURE ZEIT. EUER ÜBERBLICK.</div>
+                <h1>Familienkalender<span class="title-dot">.</span></h1>
+                <p>Alles im Blick, gemeinsam geplant.</p>
+              </div>
+              <button class="add-main" id="add2" type="button"><span data-icon="plus"></span>Termin hinzufügen</button>
+            </div>
+
+            <div class="calendar-card">
+              <div class="calendar-head">
+                <div class="month-nav">
+                  <button class="arrow" id="prev" type="button" aria-label="Vorheriger Monat"><span data-icon="left"></span></button>
+                  <button class="arrow" id="next" type="button" aria-label="Nächster Monat"><span data-icon="right"></span></button>
+                  <h2 id="monthTitle"></h2>
+                  <span class="month-tag" id="eventCount"></span>
+                </div>
+                <div class="legend" id="legend"></div>
+              </div>
+              <div class="calendar-grid">
+                <div class="weekdays"><div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div></div>
+                <div class="days" id="days"></div>
+              </div>
+            </div>
+
+            <div class="below">
+              <section class="agenda-card">
+                <div class="agenda-head">
+                  <div><div class="eyebrow">DEIN TAG AUF EINEN BLICK</div><h3 id="selectedDate"></h3></div>
+                  <button class="small-add" id="add3" type="button">+ Termin</button>
+                </div>
+                <div class="agenda-list" id="agendaList"></div>
+              </section>
+              <aside class="quote-card">
+                <div class="quote-symbol">“</div>
+                <p>Die schönsten Momente sind die, die wir gemeinsam planen.</p>
+                <span>— EURE FAMILIE</span>
+                <div class="quote-flower">✳</div>
+              </aside>
+            </div>
+            <footer>Mit Liebe organisiert <span>✳</span></footer>
+          </section>
+        </main>
+      </div>
+      <div id="modal"></div>
+      <div id="notice" hidden></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
