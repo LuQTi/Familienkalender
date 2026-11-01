@@ -6,10 +6,8 @@ const supabase = env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY
   ? createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY) : null;
 const people = [
   { id:'all', name:'Alle', color:'#456b53', initials:'✳' },
-  { id:'mama', name:'Mama', color:'#d08e70', initials:'M' },
-  { id:'papa', name:'Papa', color:'#7194a0', initials:'P' },
-  { id:'lina', name:'Lina', color:'#c39b4b', initials:'L' },
-  { id:'ben', name:'Ben', color:'#9a88b5', initials:'B' },
+  { id:'lukas', name:'Lukas', color:'#d08e70', initials:'L' },
+  { id:'timea', name:'Timea', color:'#7194a0', initials:'T' },
 ];
 const now = new Date();
 let year = now.getFullYear(), month = now.getMonth(), selected = new Date(now.getFullYear(),now.getMonth(),now.getDate());
